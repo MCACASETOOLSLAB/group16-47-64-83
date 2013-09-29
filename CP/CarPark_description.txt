@@ -1,0 +1,6 @@
+Cars enter through the WEST gate and leave through the EAST gate.
+The CARPARK can hold a maximum of  N = 4 cars.
+When CARPARK is full then cars are not permitted to enter until a car leaves
+creating a space. As is the nature of carparks, cars try to enter at twice the rate that
+they leave. The program uses guarded communication. Arrival events are not accepted
+when the carpark is full.

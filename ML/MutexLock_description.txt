@@ -1,0 +1,7 @@
+The program uses a semaphore to ensure that it is not possible for  threads
+to enter their critical sections at the same time. The critical section is
+represented by a light blue (cyan) colour. To execute in this region, a thread must
+have acquired mutual exclusion by executing a down() operation on the semaphore
+Mutex. The length of time each thread spends in its critical section may be adjusted
+using the slider control. Further to the right increases this time. The adjustment takes effect at
+the beginning of each revolution.
