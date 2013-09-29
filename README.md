@@ -1,7 +1,22 @@
 group16-47-64-83
 ================
 
-Compiling and Running programs locally
+The package is created for the purpose of E-learning of the topics process synchronization,semaphores,monitores,locks,mutex etc.
+Dining Philosopher problem is taken to make the learning easy.
+The problem is solved using semaphores,locks,mutex.
+The working of locks is defined separately in the other page called lock.
+
+To use the pakage follow the steps--
+1. download the whole package.
+2.make sure you've downloded the folders also.
+3.right-click on "Dining-philo" file, open with any internet browser.
+
+if u are just opening the file then the images or links will not work.
+
+
+
+
+Compiling and Running Java programs locally
 
   Requirement: JDK 1.6 or above
   
@@ -18,6 +33,5 @@ Compiling and Running programs locally
           e.g. c:\prog> appletviewer diners.htm
   step6. repeat step5 for all htm/html files in the repo.
   step7. wait and watch, then stop. 
-
           
     
