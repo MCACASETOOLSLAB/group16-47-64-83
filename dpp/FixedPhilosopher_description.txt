@@ -1,0 +1,4 @@
+The version avoids the possibility of deadlock by making one of the
+philosophers (located at the bottom of the display) pick up the chopsticks
+in a different order from the rest. That is, left first rather than right
+first. 

@@ -1,0 +1,12 @@
+Description of the problem
+
+Five philosophers sit around a circular table. Each philosopher spends
+his life alternatively thinking and eating. In the centre of the table
+is a large plate of noodles. A philosopher needs two chopsticks to eat
+a helping of noodles. Unfortunately, as philosophy is not as well paid
+as computing, the philosophers can only afford five chopsticks. One chopstick
+is placed between each pair of philosophers and they agree that each will
+only use the chopstick to his immediate right and left. The slider in the
+applet below controls the amount of time that a philosopher spends eating
+and thinking. Philosophers are depicted in yellow when they are thinking,
+blue when hungry and green when eating. 
