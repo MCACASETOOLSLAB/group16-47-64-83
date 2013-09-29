@@ -1,7 +1,23 @@
 group16-47-64-83
 ================
 
-Process Synchronization
-Dining Philosopher problem In computer science, the dining philosophers problem is an example problem often used in concurrent algorithm design to illustrate synchronization issues and techniques for resolving them. Problem Statement: Five silent philosophers sit at a table around a bowl of spaghetti. A fork is placed between each pair of adjacent philosophers. (An alternative problem formulation uses rice and chopsticks instead of spaghetti and forks.) Each philosopher must alternately think and eat. However, a philosopher can only eat spaghetti when he has both left and right forks. Each fork can be held by only one philosopher and so a philosopher can use the fork only if it's not being used by another philosopher. After he finishes eating, he needs to put down both forks so they become available to others. A philosopher can grab the fork on his right or the one on his left as they become available, but can't start eating before getting both of them. Eating is not limited by the amount of spaghetti left: assume an infinite supply. The problem is how to design a discipline of behavior (a concurrent algorithm) such that each philosopher won't starve; i.e., can forever continue to alternate between eating and thinking assuming that any philosopher cannot know when others may want to eat or think. Issues: The problem was designed to illustrate the problem of avoiding deadlock a system state in which no progress is possible. To see that designing a proper solution to this problem isn't obvious, consider the following proposal: instruct each philosopher to behave as follows: think until the left fork is available; when it is, pick it up; think until the right fork is available; when it is, pick it up; when both forks are held, eat for a fixed amount of time; then, put the right fork down; then, put the left fork down; repeat from the beginning. This attempt at a solution fails: it allows the system to reach a deadlock state, in which no progress is possible. This is the state in which each philosopher has picked up the fork to the left, waiting for the fork to the right to be put down. With the given instructions, this state can be reached, and when it is reached, the philosophers will eternally wait for each other to release a fork. Now I know this dining philosophers problem is researched a lot and there are resources everywhere. But we wrote a simple code to solve this problem with C. We wrote this with process synchronization problem using semaphores, busy waiting, spinlocks, monitors, critical section, and mutex.
+Compiling and Running programs locally
 
-Working: 1. The initial states of the philosopher’s is given as thinking. 2. Press 1 if you want to exit. 3. Press 2 if any of the philosopher is hungry he will pick up his spoons if both are available, to do this he must pick them in a critical section. 4. Press 3 if you want to change the state of any philosopher from eating to thinking. 5. If we change the state of a philosopher from eating to thinking then immediate neighbors of that person will start eating(if 1 is eating and we changing his state to thinking then philosopher 2 and 5 start eating). 6. If any of the philosopher is eating(critical section) and his neighbor send request for eating then he will go to waiting state.
+  Requirement: JDK 1.6 or above
+  
+  Step1. Download all files in a folder "prog" (say)
+  Step2. Press Windows key + r or open "run" 
+         type cmd  :- command prompt will open
+            go to the folder containing downloaded files using "cd" and "cd .."
+  step3. type SET PATH = "jdk/bin folder"
+          e.g. c:\prog> SET PATH = D:\jdk\bin
+  step4. compile all the java files
+          e.g. c:\prog>javac diners.java
+          similarly for other java files
+  step5. open applet viewer using appletviewer command
+          e.g. c:\prog> appletviewer diners.htm
+  step6. repeat step5 for all htm/html files in the repo.
+  step7. wait and watch, then stop.
+
+          
+    
