@@ -17,7 +17,7 @@ Compiling and Running programs locally
   step5. open applet viewer using appletviewer command
           e.g. c:\prog> appletviewer diners.htm
   step6. repeat step5 for all htm/html files in the repo.
-  step7. wait and watch, then stop.
+  step7. wait and watch, then stop. 
 
           
     
