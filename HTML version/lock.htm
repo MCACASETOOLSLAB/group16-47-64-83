@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html itemscope="" ><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Locks, Actors, And STM In Pictures</title>
+    
+    <meta name="viewport" content="width=320">
+    <meta itemprop="name" content="Naveen.io">
+    <link href="http://fonts.googleapis.com/css?family=Ovo|Lato:300,900" rel="stylesheet">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/disqus.css">
+    <link rel="stylesheet" href="css/prettify.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <script type="text/javascript" async="" id="gauges-tracker" data-site-id="519450b2f5a1f548ca000031" src="./js/track.js"></script><script type="text/javascript" async="" src="./js/ga.js"></script><script type="text/javascript" src="./js/prettify.js"></script>
+    <script type="text/javascript" src="./js/lang-hs.js"></script>
+    <script type="text/javascript" src="./js/ga(1).js"></script>
+	<script type="text/javascript" async="" src="./Locks, Actors, And STM In Pictures - adit.io_files/embed.js"></script></head>
+  <body onload="prettyPrint()">
+    
+    <div id="container" class="container">
+      <div class="row">
+        <div id="content" class="span12">
+          
+
+
+          <h1>Locks, Actors, And STM In Pictures</h1>
+
+
+<p>All programs with concurrency have the same problem.</p>
+<p>Your program uses some memory:</p>
+<div class="figure">
+  <img src="./img/memory.png">
+  <p class="caption"></p>
+</div>
+<p>When your code is single-threaded, there's just one thread writing to memory. You are A-OK:</p>
+<div class="figure">
+  <img src="./img/single_thread.png">
+  <p class="caption"></p>
+</div>
+<p>But if you have more than one thread, they could overwrite each others changes!</p>
+<div class="figure">
+  <img src="./img/multiple_threads.png">
+  <p class="caption"></p>
+</div>
+<p>You have three ways of dealing with this problem:</p>
+<ol style="list-style-type: decimal">
+  <li>Locks</li>
+  <li>Actors</li>
+  <li>Software Transactional Memory</li>
+</ol>
+<h2 id="locks">Locks</h2>
+<p>When your code accesses some memory, you lock it up:</p>
+<div class="figure">
+  <img src="./img/code_with_mutex.png">
+  <p class="caption"></p>
+</div>
+<p>
+  <strong>mutex</strong> == the lock.</p>
+<p>
+  <strong>critical section</strong> == the code locked with a mutex.</p>
+<p>Now if a thread wants to run this code, he (or she) needs the key. So only one thread can run the code at a time:</p>
+<div class="figure">
+  <img src="./img/threads_using_mutex.png">
+  <p class="caption"></p>
+</div>
+<p>Sweet! Only one thread can write to that memory at a time now. Problem solved! Right?</p>
+<div class="figure">
+  <img src="./img/mutex.png" alt="A thread in a critical section">
+  <p class="caption">A thread in a critical section</p>
+</div>
+<p>Each Philosopher gets a left and a right fork (both forks are mutexes):</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">class</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Philosopher</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> initialize</span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">name</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> left_fork</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> right_fork</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+    </span></span><span class="lit"><span class="lit">@name</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> name
+    </span></span><span class="lit"><span class="lit">@left_fork</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> left_fork
+    </span></span><span class="lit"><span class="lit">@right_fork</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> right_fork
+  </span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<p>Now we try to get the forks:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">while</span></span><span class="pln"><span class="pln"> </span></span><span class="kwd"><span class="kwd">true</span></span><span class="pln"><span class="pln">
+  </span></span><span class="lit"><span class="lit">@left_fork</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">lock
+  puts </span></span><span class="str"><span class="str">"Philosopher #@name has one fork..."</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">if</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">@right_fork</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">try_lock
+    </span></span><span class="kwd"><span class="kwd">break</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">else</span></span><span class="pln"><span class="pln">
+    puts </span></span><span class="str"><span class="str">"Philosopher #@name cannot pickup second fork"</span></span><span class="pln"><span class="pln">
+    </span></span><span class="lit"><span class="lit">@left_fork</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">unlock
+  </span></span><span class="kwd"><span class="kwd">end</span></span><span class="pln"><span class="pln">
+</span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<ol style="list-style-type: decimal">
+  <li>A philosopher picks up fork 1. He waits till he has it (<code class="lang-rb"><span class="pln">lock</span></code> waits).</li>
+  <li>He tries to pick up fork 2, but doesn't wait (<code class="lang-rb"><span class="pln">try_lock</span></code> doesn't wait).</li>
+  <li>If he didn't get fork 2, he puts back fork 1 and tries again.</li>
+</ol>
+<p>
+<h2 id="actors">Actors</h2>
+<p> Every actor manages its own state:</p>
+<div class="figure">
+  <img src="./img/actor.png">
+  <p class="caption"></p>
+</div>
+<p>Actors ask each other to do things by passing messages:</p>
+<div class="figure">
+  <img src="./img/actor_passing_messages.png">
+  <p class="caption"></p>
+</div>
+<p>
+  <strong>Actors never share state so they never need to compete for locks for access to shared data</strong>. If actors never block, you will never have deadlock! Actors are never shared between threads, so only one thread ever accesses the actor's state.</p>
+<p>When you pass a message to an actor, it goes in his mailbox. The actor reads messages from his mailbox and does those tasks one at a time:</p>
+<div class="figure">
+  <img src="./img/actor_reading_a_message.png">
+  <p class="caption"></p>
+</div>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">class</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Dog</span></span><span class="pln"><span class="pln">
+  include </span></span><span class="typ"><span class="typ">Celluloid</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> set_name name
+    </span></span><span class="lit"><span class="lit">@name</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> name
+  </span></span><span class="kwd"><span class="kwd">end</span></span><span class="pln"><span class="pln">
+
+  </span></span><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> get_name
+    </span></span><span class="lit"><span class="lit">@name</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">end</span></span><span class="pln"><span class="pln">
+</span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<p>See that <code class="lang-rb"><span class="pln">include </span><span class="typ">Celluloid</span></code>? That's all it takes, and now every <code class="lang-rb"><span class="typ">Dog</span></code> is an actor!</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pun"><span class="pun">&gt;</span></span><span class="pln"><span class="pln"> d </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Dog</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">new
+ </span></span><span class="pun"><span class="pun">=&gt;</span></span><span class="pln"><span class="pln"> </span></span><span class="com"><span class="com">#&lt;Celluloid::ActorProxy(Dog:0x3fe988c0d60c)&gt;</span></span><span class="pln"><span class="pln">
+</span></span><span class="pun"><span class="pun">&gt;</span></span><span class="pln"><span class="pln"> d</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">set_name </span></span><span class="str"><span class="str">"snowy"</span></span><span class="pln"><span class="pln">
+ </span></span><span class="pun"><span class="pun">=&gt;</span></span><span class="pln"><span class="pln"> </span></span><span class="str"><span class="str">"snowy"</span></span></code>
+</pre>
+<p>Here we are telling the actor, <code class="lang-rb"><span class="pln">d</span></code>, to set its name to "snowy" synchronously. Here we instead pass it a message to set the name asynchronously:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pln"><span class="pln">d</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">async</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">set_name </span></span><span class="str"><span class="str">"snoopy"</span></span><span class="pln"><span class="pln">
+ </span></span><span class="pun"><span class="pun">=&gt;</span></span><span class="pln"><span class="pln"> </span></span><span class="kwd"><span class="kwd">nil</span></span><span class="pln"><span class="pln">
+d</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">get_name
+ </span></span><span class="pun"><span class="pun">=&gt;</span></span><span class="pln"><span class="pln"> </span></span><span class="str"><span class="str">"snoopy"</span></span></code>
+</pre>
+<p>Pretty cool. To solve the dining philosophers problem, we need to model the shared state using an actor. So we introduce a <code class="lang-rb"><span class="typ">Waiter</span></code>:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">class</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Waiter</span></span><span class="pln"><span class="pln">
+  include </span></span><span class="typ"><span class="typ">Celluloid</span></span><span class="pln"><span class="pln">
+  FORK_FREE </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">0</span></span><span class="pln"><span class="pln">
+  FORK_USED </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">1</span></span><span class="pln"><span class="pln">
+
+  </span></span><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> initialize</span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">forks</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+    </span></span><span class="lit"><span class="lit">@philosophers</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">[]</span></span><span class="pln"><span class="pln">
+    </span></span><span class="lit"><span class="lit">@eating</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">[]</span></span><span class="pln"><span class="pln">
+    </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">[</span></span><span class="pln"><span class="pln">FORK_FREE</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> FORK_FREE</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> FORK_FREE</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> FORK_FREE</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> FORK_FREE</span></span><span class="pun"><span class="pun">]</span></span><span class="pln"><span class="pln">
+  </span></span><span class="kwd"><span class="kwd">end</span></span><span class="pln"><span class="pln">
+</span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<p>The waiter is in charge of forks:</p>
+<div class="figure">
+  <img src="./img/waiter.png">
+  <p class="caption"></p>
+</div>
+<p>When a Philosopher gets hungry, he lets the waiter know by passing a message:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> think
+  puts </span></span><span class="str"><span class="str">"#{name} is thinking"</span></span><span class="pln"><span class="pln">
+  sleep</span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">rand</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+  puts </span></span><span class="str"><span class="str">"#{name} gets hungry"</span></span><span class="pln"><span class="pln">
+  waiter</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">async</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">hungry</span></span><span class="pun"><span class="pun">(</span></span><span class="typ"><span class="typ">Actor</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">current</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+</span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<div class="figure">
+  <img src="./img/philosopher_is_hungry.png">
+  <p class="caption"></p>
+</div>
+<p>When the waiter gets the message, he sees if the forks are available.</p>
+<ul>
+  <li>If they are available, he will mark them as in use and send the philosopher a message to eat.</li>
+  <li>If they are in use, he tells the philosopher to keep thinking.</li>
+</ul>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="kwd"><span class="kwd">def</span></span><span class="pln"><span class="pln"> hungry</span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">philosopher</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+  pos </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">@philosophers</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">index</span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">philosopher</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+
+  left_pos </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> pos
+  right_pos </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">pos </span></span><span class="pun"><span class="pun">+</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">1</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">%</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">size
+
+  </span></span><span class="kwd"><span class="kwd">if</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pun"><span class="pun">[</span></span><span class="pln"><span class="pln">left_pos</span></span><span class="pun"><span class="pun">]</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">==</span></span><span class="pln"><span class="pln"> FORK_FREE </span></span><span class="pun"><span class="pun">&amp;&amp;</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pun"><span class="pun">[</span></span><span class="pln"><span class="pln">right_pos</span></span><span class="pun"><span class="pun">]</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">==</span></span><span class="pln"><span class="pln"> FORK_FREE
+    </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pun"><span class="pun">[</span></span><span class="pln"><span class="pln">left_pos</span></span><span class="pun"><span class="pun">]</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> FORK_USED
+    </span></span><span class="lit"><span class="lit">@forks</span></span><span class="pun"><span class="pun">[</span></span><span class="pln"><span class="pln">right_pos</span></span><span class="pun"><span class="pun">]</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> FORK_USED
+    </span></span><span class="lit"><span class="lit">@eating</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">&lt;&lt;</span></span><span class="pln"><span class="pln"> philosopher
+    philosopher</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">async</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">eat
+  </span></span><span class="kwd"><span class="kwd">else</span></span><span class="pln"><span class="pln">
+    philosopher</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">async</span></span><span class="pun"><span class="pun">.</span></span><span class="pln"><span class="pln">think
+  </span></span><span class="kwd"><span class="kwd">end</span></span><span class="pln"><span class="pln">
+</span></span><span class="kwd"><span class="kwd">end</span></span></code>
+</pre>
+<div class="figure">
+  <img src="./img/actor_flow.png">
+  <p class="caption"></p>
+</div>
+<p>
+<p>The shared state is the forks, and only one thread (the waiter) is managing the shared state. Problem solved! Thanks Actors!</p>
+<h2 id="software-transactional-memory">Software Transactional Memory</h2>
+<p>I'm going to use Haskell for this section, because it has a very good implementation of STM.</p>
+<p>STM is very easy to use. It's just like transactions in databases! For example, here's how you pick up two forks atomically:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pln"><span class="pln">atomically $ </span></span><span class="kwd"><span class="kwd">do</span></span><span class="pln"><span class="pln">
+  leftFork </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> takeFork left
+  rightFork </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> takeFork right</span></span></code>
+</pre>
+<p>That's it! No need to mess around with locks or message passing. Here's how STM works:</p>
+<ol style="list-style-type: decimal">
+  <li>You make a variable that will contain the shared state. In Haskell this variable is called a <code class="lang-rb"><span class="typ">TVar</span></code>:</li>
+</ol>
+<div class="figure">
+  <img src="./img/tvar.png">
+  <p class="caption"></p>
+</div>
+<p>You can write to a <code class="lang-rb"><span class="typ">TVar</span></code> using <code class="lang-rb"><span class="pln">writeTVar</span></code> or read using <code class="lang-rb"><span class="pln">readTVar</span></code>. A transaction deals with reading and writing <code class="lang-rb"><span class="typ">TVar</span></code>s.</p>
+<ol start="2" style="list-style-type: decimal">
+  <li>When a transaction is run in a thread, Haskell creates a transaction log that is for that thread only.</li>
+</ol>
+<div class="figure">
+  <img src="./img/log.png">
+  <p class="caption"></p>
+</div>
+<ol start="3" style="list-style-type: decimal">
+  <li>Whenever one a block of shared memory is written to (with <code class="lang-rb"><span class="pln">writeTVar</span></code>), the address of the <code class="lang-rb"><span class="typ">TVar</span></code> and its new value is written <strong>into the log</strong> instead of to the <code class="lang-rb"><span class="typ">TVar</span></code>:</li>
+</ol>
+<div class="figure">
+  <img src="./img/write_log.png">
+  <p class="caption"></p>
+</div>
+<ol start="4" style="list-style-type: decimal">
+  <li>Whenever a block is read (using <code class="lang-rb"><span class="pln">readTVar</span></code>):</li>
+</ol>
+<ul>
+  <li>first the thread will search the log for the value(in case the TVar was written by an earlier call to writeTVar).</li>
+  <li>if nothing is found, <strong>then</strong> value is read from the TVar itself, <strong>and the TVar and value read are recorded in the log</strong>.</li>
+</ul>
+<div class="figure">
+  <img src="./img/read_log.png">
+  <p class="caption"></p>
+</div>
+<p>In the meantime, other threads could be running their own atomic blocks, and modifying the same <code class="lang-rb"><span class="typ">TVar</span></code>.</p>
+<div class="figure">
+  <img src="./img/many_logs.png">
+  <p class="caption"></p>
+</div>
+<p>When the <code class="lang-rb"><span class="pln">atomically</span></code> block finishes running, the log gets validated. Here's how validation works: we check each <code class="lang-rb"><span class="pln">readTVar</span></code> recorded in the log and make sure it matches the value in the real <code class="lang-rb"><span class="typ">TVar</span></code>. If they match, the validation succeeds! And we write the new value from the transaction log into the <code class="lang-rb"><span class="typ">TVar</span></code>.</p>
+<div class="figure">
+  <img src="./img/transaction_success.png">
+  <p class="caption"></p>
+</div>
+<p>If validation fails, we delete the transaction log and run the block all over again:</p>
+<div class="figure">
+  <img src="./img/transaction_failure.png">
+  <p class="caption"></p>
+</div>
+<p>Since we're using Haskell, we can guarantee that the block had no side-effects,i.e.&nbsp;we can run it over and over and it will always return the same result!</p>
+<p>Haskell also has <code class="lang-rb"><span class="typ">TMVar</span></code>s, which are similar. A <code class="lang-rb"><span class="typ">TMVar</span></code> either holds a value or is empty:</p>
+<div class="figure">
+  <img src="./img/tmvar.png" alt="An empty TMVar">
+  <p class="caption">An empty TMVar</p>
+</div>
+<p>You can put a value in a <code class="lang-rb"><span class="typ">TMVar</span></code> using <code class="lang-rb"><span class="pln">putTMVar</span></code> or take the value in the <code class="lang-rb"><span class="typ">TMVar</span></code> using <code class="lang-rb"><span class="pln">takeTMVar</span></code>.</p>
+<ol style="list-style-type: decimal">
+  <li>If there you try to put a value in a <code class="lang-rb"><span class="typ">TMVar</span></code> and there's something there already, <code class="lang-rb"><span class="pln">putTMVar</span></code> will block until it is empty.</li>
+  <li>If there you try to take a value from a <code class="lang-rb"><span class="typ">TMVar</span></code> and it is empty, <code class="lang-rb"><span class="pln">takeTMVar</span></code> will block until there’s something in there.</li>
+</ol>
+<p>Our forks are <code class="lang-rb"><span class="typ">TMVar</span></code>s. Here are all the fork-related functions:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pln"><span class="pln">newFork </span></span><span class="pun"><span class="pun">::</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Int</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">-&gt;</span></span><span class="pln"><span class="pln"> IO </span></span><span class="typ"><span class="typ">Fork</span></span><span class="pln"><span class="pln">
+newFork i </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> newTMVarIO i
+
+takeFork </span></span><span class="pun"><span class="pun">::</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Fork</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">-&gt;</span></span><span class="pln"><span class="pln"> STM </span></span><span class="typ"><span class="typ">Int</span></span><span class="pln"><span class="pln">
+takeFork fork </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> takeTMVar fork
+
+releaseFork </span></span><span class="pun"><span class="pun">::</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Int</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">-&gt;</span></span><span class="pln"><span class="pln"> </span></span><span class="typ"><span class="typ">Fork</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">-&gt;</span></span><span class="pln"><span class="pln"> STM </span></span><span class="pun"><span class="pun">()</span></span><span class="pln"><span class="pln">
+releaseFork i fork </span></span><span class="pun"><span class="pun">=</span></span><span class="pln"><span class="pln"> putTMVar fork i</span></span></code>
+</pre>
+<p>A philosopher picks up the two forks:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">leftNum</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> rightNum</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> atomically $ </span></span><span class="kwd"><span class="kwd">do</span></span><span class="pln"><span class="pln">
+  leftNum </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> takeFork left
+  rightNum </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> takeFork right
+  </span></span><span class="kwd"><span class="kwd">return</span></span><span class="pln"><span class="pln"> </span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">leftNum</span></span><span class="pun"><span class="pun">,</span></span><span class="pln"><span class="pln"> rightNum</span></span><span class="pun"><span class="pun">)</span></span></code>
+</pre>
+<p>He eats for a bit:</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pln"><span class="pln">putStrLn $ printf </span></span><span class="str"><span class="str">"%s got forks %d and %d, now eating"</span></span><span class="pln"><span class="pln"> name leftNum rightNum
+delay </span></span><span class="pun"><span class="pun">&lt;-</span></span><span class="pln"><span class="pln"> randomRIO </span></span><span class="pun"><span class="pun">(</span></span><span class="lit"><span class="lit">1</span></span><span class="pun"><span class="pun">,</span></span><span class="lit"><span class="lit">3</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+threadDelay </span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">delay </span></span><span class="pun"><span class="pun">*</span></span><span class="pln"><span class="pln"> </span></span><span class="lit"><span class="lit">1000000</span></span><span class="pun"><span class="pun">)</span></span><span class="pln"><span class="pln">
+putStrLn </span></span><span class="pun"><span class="pun">(</span></span><span class="pln"><span class="pln">name </span></span><span class="pun"><span class="pun">++</span></span><span class="pln"><span class="pln"> </span></span><span class="str"><span class="str">" is done eating. Going back to thinking."</span></span><span class="pun"><span class="pun">)</span></span></code>
+</pre>
+<p>And puts the forks back.</p>
+<pre class="lang-rb"><span class="pln">  </span><code class="lang-rb"><span class="pln"><span class="pln">atomically $ </span></span><span class="kwd"><span class="kwd">do</span></span><span class="pln"><span class="pln">
+  releaseFork leftNum left
+  releaseFork rightNum right</span></span></code>
+</pre>
+<p>
+<p>Actors require you to restructure your whole program. STM is easier to use . you just specify what parts should run atomically. Clojure and Haskell both have core support for STM. It's also available as modules for a lot of other languages: C, Python, Scala, JavaScript <a href="http://en.wikipedia.org/wiki/Software_transactional_memory#Implementations">etc etc</a>.</p>
+<p>I'm pretty excited to see STM used more!</p>
+<h2 id="conclusion">Conclusion</h2>
+<div class="figure">
+  <img src="./img/conclusion.png">
+  <p class="caption"></p>
+</div>
+<h3 id="locks-1">Locks</h3>
+<ul>
+  <li>available in most languages</li>
+  <li>give you fine-grained control over your code</li>
+  <li>Complicated to use. Your code will have subtle deadlock / starvation issues. <strong>You probably shouldn't use locks</strong>.</li>
+</ul>
+<h3 id="actors-1">Actors</h3>
+<ul>
+  <li>No shared state, so writing thread-safe is a breeze</li>
+  <li>No locks, so no deadlock unless your actors block</li>
+  <li>All your code needs to use actors and message passing, so you may need to restructure your code</li>
+</ul>
+<h3 id="stm">STM</h3>
+<ul>
+  <li>Very easy to use, don't need to restructure code</li>
+  <li>No locks, so no deadlock</li>
+  <li>Good performance (threads spend less time idling)</li>
+</ul>
+<br>
+<h1>--------Thank You---------[@Naveen Kumar]</h1>
+
+
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'aditio'; // required: replace example with your forum shortname
+    // var disqus_developer = 1; // developer mode is on
+
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the &lt;a href="http://disqus.com/?ref_noscript"&gt;comments powered by Disqus.&lt;/a&gt;</noscript>
+
+
+
+        </div>
+      </div>
+    </div>
+<script type="text/javascript">
+  var _gauges = _gauges || [];
+  (function() {
+    var t   = document.createElement('script');
+    t.type  = 'text/javascript';
+    t.async = true;
+    t.id    = 'gauges-tracker';
+    t.setAttribute('data-site-id', '519450b2f5a1f548ca000031');
+    t.src = '//secure.gaug.es/track.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(t, s);
+  })();
+</script>    
+		
+	
+</body></html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html itemscope=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>The Dining Philosophers Problem With Ron Swanson </title>
+    
+    <meta name="viewport" content="width=320">
+    <meta itemprop="name" content="naveen.io">
+    <link href="http://fonts.googleapis.com/css?family=Ovo|Lato:300,900" rel="stylesheet">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/disqus.css">
+    <link rel="stylesheet" href="css/prettify.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <script type="text/javascript" async="" id="gauges-tracker" data-site-id="519450b2f5a1f548ca000031" src="./js/track.js"></script><script type="text/javascript" async="" src="./js/ga.js"></script><script type="text/javascript" src="./js/prettify.js"></script>
+    <script type="text/javascript" src="./js/lang-hs.js"></script>
+    <script type="text/javascript" src="./js/ga(1).js"></script>
+	<script type="text/javascript" async="" src="./js/embed.js"></script></head>
+  <body onload="prettyPrint()">
+    <div id="container" class="container">
+      <div class="row">
+        <div id="content" class="span12">
+          
+
+
+          <h1>The Dining Philosophers Problem With Ron Swanson</h1>
+
+<blockquote>
+  <p>Give me all the bacon and eggs you have.</p>
+  <p>- Plato</p>
+</blockquote>
+<p>The dining philosophers problem is a classic concurrency problem dealing with synchronization. Gather round and I will tell you how it goes:</p>
+<p>Five philosophers are sitting at a table.</p>
+<p>
+  <img src="./img/at_the_table.png">
+</p>
+<p>Now, each philosopher has two forks: left fork and right fork. If a Swanson gets two forks, he can eat! <img src="./img/happy_ron.png"></p>
+<p>If he only has one fork he can not eat :( <img src="./img/sad_ron.png"></p>
+<p>So the Swansons need to learn to share forks: <img src="./img/happy_and_sad.png"></p>
+<p>The dining philosophers problem is: <strong>how do you make sure every Swanson gets to eat?</strong></p>
+<h2 id="deadlock">Deadlock</h2>
+<p>Don't get me wrong, I love Swansons. But damn they are competitive. As soon as I told them to start eating, every Swanson grabbed a fork:</p>
+<div class="figure">
+  <img src="./img/deadlock.png">
+  <p class="caption"></p>
+</div>
+<p>And then they waited for someone to give up their fork so they could eat. But of course, a Swanson never gives up his fork!! <em>sigh</em> So they waited forever and eventually died in their stupid log cabin. Great job, guys. When all Swansons are stuck, that is called <em>deadlock</em>.</p>
+<h2 id="livelock">Livelock</h2>
+<p>Alright Rons. I'm going to set a time limit. If you have been waiting for a fork for 10 minutes, you need to give up your fork. And wait 10 minutes before you try to pick up a fork again. By then, someone else will be done and you can use his fork:</p>
+<div class="figure">
+  <img src="./img/livelock_good.png">
+  <p class="caption"></p>
+</div>
+<p>Now you can't have deadlock. But if all Swansons do these actions at the exact same time, you now have livelock:</p>
+<p>Yay! Nothing can go wrong now! Right?</p>
+<p>
+  <em>30 minutes later</em>
+</p>
+<p>So let me get this straight..</p>
+<ol style="list-style-type: decimal">
+  <li>You all picked up your fork at the exact same time.</li>
+  <li>10 minutes later, you all put down your forks.</li>
+  <li>10 minutes later, you just picked up your forks again! <a href="http://en.wikipedia.org/wiki/Livelock#Livelock">This will go on forever!</a></li>
+</ol>
+<div class="figure">
+  <img src="./img/exasperated.png">
+  <p class="caption"></p>
+</div>
+<p>What do, nephew? You Swansons will <a href="http://en.wikipedia.org/wiki/Resource_starvation">starve</a>!</p>
+<h2 id="resource-hierarchy">Resource Hierarchy</h2>
+<p>Let's number the forks:</p>
+<div class="figure">
+  <img src="./img/forks.png">
+  <p class="caption"></p>
+</div>
+<p>Now Rons, the rule is, if you are using two forks, you need to pick up the lower numbered fork first.</p>
+<p>Now let's see what happens:</p>
+<div class="figure">
+  <img src="./img/resource_hierarchy.png">
+  <p class="caption"></p>
+</div>
+<ul>
+  <li>
+    <strong>Ron #1</strong> picks up <strong>fork #1</strong></li>
+  <li>
+    <strong>Ron #2</strong> picks up <strong>fork #2</strong></li>
+  <li>
+    <strong>Ron #3</strong> picks up <strong>fork #3</strong></li>
+  <li>
+    <strong>Ron #4</strong> picks up <strong>fork #4</strong></li>
+  <li>
+    <strong>Ron #5</strong>
+    <em>can't</em> pick up <strong>fork #5</strong>! Because he will need two forks and he needs to pick up the lower numbered fork first!</li>
+</ul>
+<p>So <strong>fork #5</strong> goes to <strong>Ron #4</strong>  no deadlock!</p>
+<div class="figure">
+  <img src="./img/resource_hierarchy_result.png">
+  <p class="caption"></p>
+</div>
+<p>Cool, resource hierarchy avoids deadlocks! But it is slow. Suppose you have forks #3 and #5. Then you decide you need fork #2. Well forks #3 and #5 are larger numbers. So you’ll have to:</p>
+<ol style="list-style-type: decimal">
+  <li>put down fork #5</li>
+  <li>put down fork #3 (the order you put these down in doesn't matter)</li>
+  <li>pick up fork #2</li>
+  <li>pick up fork #3</li>
+  <li>pick up fork #5</li>
+</ol>
+<p>Ugh, what a waste of time!</p>
+<h2 id="semaphores">Semaphores</h2>
+<p>Here's an easier solution: if there are 5 forks, only 4 Swansons should be allowed at the table. We'll have a waiter control access to the table:</p>
+<div class="figure">
+  <img src="./img/semaphore.png">
+  <p class="caption"></p>
+</div>
+<p>
+  <em>(Waiter by talented artist <a href="http://www.cypressfineart.com/artists_2008/patricia_reed/index.html">Patricia Reed</a>)</em>
+</p>
+<p>If there are <em>&lt; 4 Swansons</em> on the table, you can join. Otherwise you have to wait until there are &lt; 4 Swansons!</p>
+<p>Ok, this prevents deadlock, but you can still have starvation,a Swanson could wait forever and never get to sit at the table. Unless he kills off one of the other Swansons.</p>
+<h2 id="Naveen Kumar">Naveen Kumar</h2>
+<p>Now I've got it. All forks can be clean or dirty: <img src="./img/clean_or_dirty.png"></p>
+<p>Initially all forks are dirty: <img src="./img/dirty_forks.png"></p>
+<p>Now:</p>
+<ol style="list-style-type: decimal">
+  <li>
+    <p>Number all the Swansons <img src="./img/numbered_swansons.png"></p>
+  </li>
+  <li>
+    <p>For every pair of Swansons, give the fork to the guy with the smaller id:</p>
+  </li>
+</ol>
+<div class="figure">
+  <img src="./img/numbered_swansons_w_forks.png">
+  <p class="caption"></p>
+</div>
+<ol start="3" style="list-style-type: decimal">
+  <li>When a Swanson needs a fork, he asks his neighbor for his fork. When his neighbor gets the request:</li>
+</ol>
+<ul>
+  <li>if his fork is <strong>clean</strong>, he keeps it.</li>
+  <li>if his fork is <strong>dirty</strong>, he cleans it and sends it over.</li>
+</ul>
+<p>When a Swanson has eaten, all his forks become <strong>dirty</strong>.</p>
+<p>
+  <strong>Bam!</strong> Starvation problem solved! The guys who are starving get a higher priority than the guys who are eating!</p>
+  <a href="lock.htm"><h3>click here</h3></a><h2>To Learn More</h2>
+ 
+
+
+
+
+<script type="text/javascript">
+    
+    var disqus_shortname = 'aditio'; 
+   
+
+
+   
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the &lt;a href="http://disqus.com/?ref_noscript"&gt;comments powered by Disqus.&lt;/a&gt;</noscript>
+
+
+
+        </div>
+      </div>
+    </div>
+<script type="text/javascript">
+  var _gauges = _gauges || [];
+  (function() {
+    var t   = document.createElement('script');
+    t.type  = 'text/javascript';
+    t.async = true;
+    t.id    = 'gauges-tracker';
+    t.setAttribute('data-site-id', '519450b2f5a1f548ca000031');
+    t.src = '//secure.gaug.es/track.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(t, s);
+  })();
+</script>    
+		
+	
+</body></html>
