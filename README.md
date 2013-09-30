@@ -13,8 +13,30 @@ To use the pakage follow the steps--
 
 if u are just opening the file then the images or links will not work.
 
+==========================================================================================================
+C++ Version--
 
 
+To use the software follow the steps--
+
+1. download the whole package of C++ files.
+
+2.compile the code file in any c++ IDE.
+
+3. The initial states of the philosopher’s is given as thinking.
+
+4. Press 1 if you want to exit.
+
+5. Press 2 if any of the philosopher is hungry he will pick up his spoons if both are available, to do this he must pick them in a critical section.
+
+6. Press 3 if you want to change the state of any philosopher from eating to thinking.
+
+7. If we change the state of a philosopher from eating to thinking then immediate neighbours of that person will start eating
+(if 1 is eating and we changing his state to thinking then philosopher 2 and 5 start eating). 
+
+8. If any of the philosopher is eating(critical section) and his neighbor send request for eating then he will go to waiting state.
+
+==========================================================================================================
 
 Compiling and Running Java programs locally
 
